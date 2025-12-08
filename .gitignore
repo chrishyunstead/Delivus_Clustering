@@ -33,3 +33,6 @@ lambda/postalcode-clustering/utils/data/20250308_*.csv
 lambda/postalcode-clustering/.aws-sam/*
 lambda/postalcode-clustering/utils/data/max-delivery-key.json
 *.json
+.github/workflows/cd-template.yml
+.github/workflows/cd-workload.yml
+*.yml
