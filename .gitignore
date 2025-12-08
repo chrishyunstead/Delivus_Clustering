@@ -1,0 +1,35 @@
+.env
+env
+realenv
+delivus-recruitment-task
+merged_df.csv
+delivus_eda_dataset.csv
+folium_DBSCAN
+folium_KMeans
+folium_html
+marker_cluster_12-12
+csv
+osmnx
+tracking_folder
+txt_folder
+1차 EDA 보고서 추출.pdf
+ML모델
+ipynb
+cache
+오배송_ipynb
+우편번호_시각화_html
+우편번호그룹_시각화_html
+zipcode_data
+pipeline_env
+클러스터_파이프라인_ipynb
+우편번호ipynb
+검증_TEST_REAL copy.ipynb
+검증_TEST_REAL.ipynb
+crawling.ipynb
+geojson_db_pipeline/data/*
+geojson_db_pipeline/output/*
+/geojson_db_pipeline/__pycache__
+lambda/postalcode-clustering/utils/data/20250308_*.csv
+lambda/postalcode-clustering/.aws-sam/*
+lambda/postalcode-clustering/utils/data/max-delivery-key.json
+*.json

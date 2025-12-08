@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda function to test PostgreSQL connection
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: python3.11
+    Architectures: [arm64]
+
+Resources:
+  PostgresTestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: postgres-test-lambda
+      Handler: app.lambda_handler
+      CodeUri: .
+      Policies:
+        - Statement:
+            - Sid: SSMGetParameterPolicy
+              Effect: Allow
+              Action:
+                - ssm:DescribeParameters
+                - ssm:GetParameters
+                - ssm:GetParameter
+              Resource: "*"
+            - Sid: KMSPolicy
+              Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:Encrypt
+                - kms:GenerateDataKey
+              Resource: "*"
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/PushOps/SG}}'
+        SubnetIds:
+          - '{{resolve:ssm:/PushOps/PrivateSubnet3}}'
+          - '{{resolve:ssm:/PushOps/PrivateSubnet4}}'

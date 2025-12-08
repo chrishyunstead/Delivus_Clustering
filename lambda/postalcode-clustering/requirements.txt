@@ -1,0 +1,13 @@
+requests
+boto3
+pymysql
+numpy==2.2.2
+pandas==2.2.3
+scikit-learn==1.6.1
+aiomysql==0.2.0
+geopandas==1.0.1
+shapely
+psycopg2-binary==2.9.10
+google-auth==2.41.1
+google-auth-oauthlib==1.2.2
+gspread==6.2.1

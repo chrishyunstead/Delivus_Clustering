@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for postalcode-clustering
+
+Globals:
+  Function:
+    Timeout: 900
+    MemorySize: 10240
+    Tracing: Active
+
+Parameters:
+  EventBusName:
+    Type: String
+    Default: prod-daas-events-ml
+    Description: daas eventbridge
+  AccountEnv:
+    Type: String
+    Default: Prod
+    Description: account env
+
+Resources:
+  PostalcodeClusteringFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      FunctionName: ml-postalcode-clustering
+      Policies:
+        - Statement:
+            - Sid: SSMGetParameterPolicy
+              Effect: Allow
+              Action:
+                - ssm:DescribeParameters
+                - ssm:GetParameters
+                - ssm:GetParameter
+              Resource: "*"
+            - Sid: KMSPolicy
+              Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:Encrypt
+                - kms:GenerateDataKey
+              Resource: "*"
+            - Sid: PutEvents
+              Effect: Allow
+              Action:
+                - events:PutEvents
+              Resource: "*"
+            - Sid: S3
+              Effect: Allow
+              Action:
+                - s3:*
+              Resource: "*"
+      Events:
+        EBRule:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              source:
+                - daas.ml.hub
+              detail-type:
+                - autoClustering
+      Environment:
+        Variables:
+          ACCOUNT_ENV: !Ref AccountEnv
+          BUCKET_NAME: ''
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/PushOps/SG}}'
+        SubnetIds:
+          - '{{resolve:ssm:/PushOps/PrivateSubnet3}}'
+          - '{{resolve:ssm:/PushOps/PrivateSubnet4}}'
+
+    Metadata:
+      DockerTag: postalcodeClustering-v1.0
+      DockerContext: ./
+      Dockerfile: Dockerfile
+
+  PostalcodeClusteringFunctionErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions: 
+        - '{{resolve:ssm:/Infra/CHATBOT}}'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref PostalcodeClusteringFunction
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 1

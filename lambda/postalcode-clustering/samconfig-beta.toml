@@ -1,0 +1,9 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "sam-postalcode-clustering"
+resolve_s3 = true
+s3_prefix = "sam-postalcode-clustering"
+region = "ap-northeast-2"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "EventBusName=\"beta-daas-events-ml\" AccountEnv=\"Beta\""
+image_repositories = ["PostalcodeClusteringFunction=391081828857.dkr.ecr.ap-northeast-2.amazonaws.com/sampostalcodeclusteringc50d00c3/postalcodeclusteringfunction836a4ceerepo"]

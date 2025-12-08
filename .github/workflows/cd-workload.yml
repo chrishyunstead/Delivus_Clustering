@@ -1,0 +1,36 @@
+name: cd-workload
+
+on:
+  push:
+    branches: [main, beta, prod]
+
+jobs:
+  beta-sam-deploy:
+    if: github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/main'
+
+    uses: ./.github/workflows/cd-template.yml
+    with:
+      SLACK_TITLE: Beta
+      EVENT_BUS_NAME: beta-daas-events-ml
+      SAM_CONFIG_FILE: samconfig-beta.toml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.BETA_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BETA_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      SAM_S3: ${{ secrets.BETA_SAM_S3 }}
+      ORGA_INFRA_SLACK_WEB_HOOK: ${{ secrets.ORGA_INFRA_SLACK_WEB_HOOK_BETA }}
+
+  prod-sam-deploy:
+    if: github.ref == 'refs/heads/prod'
+
+    uses: ./.github/workflows/cd-template.yml
+    with:
+      SLACK_TITLE: Prod
+      EVENT_BUS_NAME: prod-daas-events-ml
+      SAM_CONFIG_FILE: samconfig-prod.toml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      SAM_S3: ${{ secrets.PROD_SAM_S3 }}
+      ORGA_INFRA_SLACK_WEB_HOOK: ${{ secrets.ORGA_INFRA_SLACK_WEB_HOOK_PROD }}
