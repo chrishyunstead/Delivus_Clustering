@@ -1,146 +1,162 @@
-# Postalcode Clustering Lambda
+# Delivus Postalcode Clustering Lambda
 
-본 프로젝트는 우편번호 기반 배송 작업을 **운영 제약(기사 스케줄, 용량 제한, 우편번호 그룹 정책)을 반영하여 자동 클러스터링하는 엔진**입니다.  
-배송 아이템, 기사 스케줄, 우편번호 그룹을 통합 분석하여 **운영 가능한 단위의 클러스터 생성 및 기사 배정**을 수행하며,  
-결과는 S3와 내부 시스템으로 전달됩니다.
+## 당일배송 허브 운영 병목을 해결한 Production MLOps 시스템
 
-전체 파이프라인은 AWS Lambda + EventBridge 기반의 **서버리스 배치 구성**으로 실행됩니다.
+> 당일배송 허브의 수작업 클러스터 편집 병목을 자동화하기 위해 구축한 운영형 클러스터링 시스템입니다.  
+> ML 기반 클러스터링과 AWS 서버리스 아키텍처를 결합하여 출차 속도와 운영 효율을 개선했습니다.
 
 ---
 
-## 아키텍처 개요
+## Executive Impact
+
+- **허브 편집 시간 38% 단축** (39.5분 → 24.3분)
+- **평균 배송지 간 거리 22% 감소** (141.3m → 110.05m)
+- **추가 주문 자동 편성 누락률 0%**
+- **AWS Lambda + EventBridge + S3** 기반 자동 운영
+- 실제 운영팀이 사용하는 **허브 관리자 앱(Hub Admin App)** 연동
+
+---
+
+## 비즈니스 문제 (Business Problem)
+
+당일배송 운영에서는 출차 전 짧은 시간 안에 수백 건의 배송 물량을 기사별로 분류해야 합니다.
+
+기존 운영 방식의 문제점:
+
+- 운영팀의 수작업 클러스터 편집
+- 기사별 물량 불균형
+- 출차 지연 및 SLA 악화
+- 추가 유입 주문 재편성 필요
+- 숙련 운영자 의존도가 높음
+
+이러한 병목은 곧 **배송 품질 저하와 운영 비용 증가**로 이어졌습니다.
+
+---
+
+## 내가 수행한 역할 (My Role)
+
+본 프로젝트에서 클러스터링 시스템의 설계부터 운영 적용까지 End-to-End로 수행했습니다.
+
+- 우편번호 그룹 기반 클러스터링 전략 설계
+- **KMeans++ + Rule-based Logic** 구현
+- 기사 스케줄 / 기사별 MAX 물량 제약 반영
+- AWS Lambda 기반 서버리스 배치 시스템 구축
+- 결과 데이터 S3 적재 및 허브앱 연동
+- Slack 알림 / 모니터링 체계 구축
+- KPI 측정 및 지속 개선
+
+---
+
+## 솔루션 개요 (Solution Overview)
+
+본 시스템은 **ML 클러스터링 + 운영 제약조건 + 자동화된 클라우드 운영**을 결합한 구조입니다.
+
+### 핵심 프로세스
+
+1. 배송 아이템 / 기사 스케줄 / 우편번호 그룹 데이터 로딩  
+2. 우편번호 그룹(Polygon) 기준 지역 매핑  
+3. **KMeans++** 기반 1차 클러스터 생성  
+4. 소형 클러스터 병합 및 비효율 그룹 재조정  
+5. 기사별 처리량(MAX), 기사 타입 정책 반영  
+6. 추가 유입 주문은 **Overlap Clustering**으로 자동 편성  
+7. 결과를 S3 저장 후 허브 관리자 앱에 반영
+
+---
+
+## 시스템 아키텍처 (Architecture)
 
 ```text
-EventBridge → Lambda(app.py)
-      ↓
-데이터 로딩
-  - 배송 아이템 (MySQL/Postgres)
-  - 기사 스케줄
-  - 우편번호 그룹 정의
-      ↓
-지역 단위 클러스터링
-  - 우편번호 폴리곤 기반 공간 매칭
-  - K-means++ + 운영 제약 반영
-      ↓
-기사 배정
-  - Y/R/O/WHITE/BLUE 타입
-  - MAX 용량 기반 제약 처리
-  - 소형 그룹 병합 / 대형 그룹 분할
-      ↓
-오버랩 주문 자동 매핑 (배치 이후 유입)
-      ↓
-S3 업로드 및 Slack 모니터링
+EventBridge Trigger / 수동 실행
+            ↓
+AWS Lambda (Docker Image)
+            ↓
+MySQL / PostgreSQL 데이터 조회
+            ↓
+Clustering Engine
+(KMeans++ + Constraint Rules)
+            ↓
+S3 결과 저장 (JSON)
+            ↓
+Slack 알림 / CloudWatch Logs
+            ↓
+허브 관리자 앱
+(지도 시각화 + 수동 미세조정)
 ```
 
 ---
 
-## 디렉터리 구조
+## 기술 스택 (Tech Stack)
+
+- **Python**
+- Pandas / NumPy / Scikit-learn
+- AWS Lambda (Container Image)
+- Amazon S3
+- EventBridge
+- CloudWatch Logs
+- Slack Webhook
+- MySQL / PostgreSQL
+- AWS SAM 배포
+
+---
+
+## 실제 운영 화면 (Real Operation Screenshots)
+
+### 전체 지역 클러스터링 결과
+
+![Hub Overview](./docs/images/image1.png)
+
+### 특정 지역 상세 클러스터 결과
+
+![Cluster Detail](./docs/images/image2.png)
+
+---
+
+## 왜 이 프로젝트가 강한 MLOps 경험인가?
+
+이 프로젝트는 단순 분석용 Notebook 프로젝트가 아닙니다.
+
+**실제 운영 현장의 병목 문제를 ML 시스템으로 해결하고, Production 환경에 배포하여 KPI를 개선한 프로젝트**입니다.
+
+### 증명 가능한 역량
+
+- 비즈니스 문제를 ML 문제로 구조화
+- ML 알고리즘과 운영 정책 결합
+- AWS 서버리스 운영 자동화
+- 데이터 파이프라인 구축
+- 장애 알림 / 운영 모니터링
+- KPI 기반 지속 개선
+
+---
+
+## 성과 지표 (Measured Results)
+
+| 지표 | 개선 전 | 개선 후 | 효과 |
+|---|---:|---:|---:|
+| 허브 편집 시간 | 39.5분 | 24.3분 | **38% 단축** |
+| 평균 배송지 간 거리 | 141.3m | 110.05m | **22% 감소** |
+| 추가 주문 편성 | 수작업 | 자동화 | **누락률 0%** |
+
+---
+
+## 디렉토리 구조 (Repository Structure)
 
 ```text
-lambda/
-└─ postalcode-clustering/
-   ├─ app.py                      # Lambda 엔트리포인트 및 전체 오케스트레이션
-   ├─ utils/
-   │  ├─ run_clustering.py        # 지역 단위 클러스터링 실행
-   │  ├─ process_region.py        # 공간 매칭 + K-means 조정 + 기사 배정
-   │  ├─ drivers/                 # 기사 배정 및 그룹 후처리 로직
-   │  ├─ zipcode/                 # 우편번호 그룹(MySQL/PG) 로딩
-   │  ├─ data/                    # 배송/스케줄/제약 데이터 로더
-   │  ├─ overlap/                 # 오버랩 주문 처리 모듈
-   │  ├─ upload_cluster_data.py   # 결과 S3 업로드
-   │  └─ slack/                   # Slack 알림 템플릿 및 Webhook 발송
+lambda/postalcode-clustering/
+├── app.py
+├── template.yaml
+├── Dockerfile
+├── utils/
+│   ├── run_clustering.py
+│   ├── process_region.py
+│   ├── overlap/
+│   ├── zipcode/
+│   └── slack/
+└── events/
 ```
 
 ---
 
-## 핵심 로직
+## Key Takeaway
 
-### 1. 지역 단위 공간 클러스터링
-
-```text
-- 우편번호 폴리곤과 배송 좌표 간 공간 매칭
-- 기사 스케줄 및 MAX 제약을 반영한 K-means++ 기반 분할/병합
-- group_name, cluster_label, driver_type, driver_code 자동 생성
-```
-
-단순 거리 기반 K-means가 아닌,  
-**실제 운영 제약(기사 근무 지역, 최대 용량, 우편번호 그룹 정책)을 함께 고려한 하이브리드 방식**입니다.
-
----
-
-### 2. 기사 배정 로직
-
-```text
-- 기사 색상(Y/R/O/WHITE/BLUE)별 작업 범위 분리
-- 기사별 최대 작업량(MAX)을 기반으로한 제약 검증
-- 그룹 중심점 기준 최소 이동 거리 기반 배정
-- WHITE 기사:
-    • 소형 그룹 병합
-    • 대형 그룹 재분할(K-means 활용)
-```
-
-운영 팀이 수작업으로 수행하던 로직을 자동화하여  
-**작업량 불균형과 비효율을 줄이는 방향으로 설계되었습니다.**
-
----
-
-### 3. 오버랩 주문 처리
-
-```text
-- 배치 실행 이후 유입된 주문을 최근 생성된 클러스터에 자동 매핑
-- 기존 cluster_label 및 driver_type 유지
-- 지연 발생에도 운영 일관성을 유지하는 구조
-```
-
----
-
-### 4. 결과 저장 및 모니터링
-
-```text
-- 배송 아이템 단위, 기사 단위, 클러스터 단위 JSON → S3 저장
-- Slack Webhook 기반 실행 결과/통계/오류 자동 보고
-```
-
----
-
-## 출력 예시
-
-```text
-zipcode     group    driver_type    cluster_label
-01786       A        WHITE          1
-01812       B        YELLOW         2
-01811       C        BLUE           1
-```
-
----
-
-## 기술 스택
-
-```text
-AWS     : Lambda, EventBridge, S3, CloudWatch
-Python  : Pandas, GeoPandas, Shapely, scikit-learn(K-means++)
-DB      : MySQL, PostgreSQL
-Ops     : Slack Webhook 기반 모니터링 및 배치 자동화
-```
-
----
-
-## 프로젝트 특징
-
-```text
-• 운영 제약 기반 클러스터링
-  - 기사 스케줄, 최대 작업량(MAX), 지역 정책 등을 함께 고려한 프로덕션 수준 로직
-
-• 공간 정보 활용
-  - 우편번호 폴리곤 + 좌표 기반 K-means 하이브리드 클러스터링
-
-• 안정적인 운영 자동화
-  - 오버랩 주문 처리
-  - Slack 실시간 모니터링 및 오류 대응
-
-• 확장성과 유지보수 용이성
-  - 지역·우편번호 그룹 정책 변경에 유연히 대응
-  - 기사 정책 변경 시 모듈 단위 교체 가능
-```
-
----
+> 운영 현장의 출차 병목을 해결하기 위해 ML 클러스터링 시스템을 직접 설계·배포·운영했으며,  
+> AWS 기반 MLOps 방식으로 실제 KPI 개선을 만든 프로젝트입니다.

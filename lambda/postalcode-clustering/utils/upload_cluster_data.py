@@ -19,7 +19,8 @@ def preprocess_shipping_data(df):
     )
 
     if "cluster_id" in df.columns:
-        df["cluster_id"] = df["cluster_id"].str.replace("-", "", regex=False)
+        # df["cluster_id"] = df["cluster_id"].str.replace("-", "", regex=False)
+        df["cluster_id"] = df["cluster_id"].astype(str)
         df["cluster_no"] = (
             df["cluster_id"].str.extract(r"(\d+)").astype(float).astype("Int64")
         )

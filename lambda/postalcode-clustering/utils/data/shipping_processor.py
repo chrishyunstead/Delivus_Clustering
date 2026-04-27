@@ -29,7 +29,7 @@ class ShippingProcessor:
                     SELECT 
                         shipping_shippingitem.`uuid` as 'shipping_uuid',
                         shipping_shippingitem.tracking_number as 'tracking_number',
-                        DATE_FORMAT(DATE_ADD(shipping_shippingitem.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
+                        DATE_FORMAT(DATE_ADD(shipping_shippingitemtimetable.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
                         shipping_shippingitem.designated_sector_id as 'item_sector',
                         regexp_replace(location_sector.code, '[0-9]', '') as 'Area',
                         location_sector.code as 'code',
@@ -39,6 +39,8 @@ class ShippingProcessor:
                         0 as 'is_scanned',
                         location_address.zipcode as 'zipcode'
                     FROM shipping_shippingitem
+                    JOIN shipping_shippingitemtimetable
+                    ON shipping_shippingitem.id = shipping_shippingitemtimetable.shipping_item_id
                     JOIN location_address
                     ON shipping_shippingitem.address_id = location_address.id
                     JOIN location_sector
@@ -48,7 +50,7 @@ class ShippingProcessor:
                     JOIN shop_shop
                     ON order_order.shop_id = shop_shop.id
                     WHERE shipping_shippingitem.status = 'CREATED'
-                    AND DATE_FORMAT(DATE_ADD(shipping_shippingitem.timestamp_created, INTERVAL 9 HOUR),'%Y-%m-%d %H:%i') BETWEEN '{start_time}' AND '{end_time}'
+                    AND DATE_FORMAT(DATE_ADD(shipping_shippingitemtimetable.timestamp_created, INTERVAL 9 HOUR),'%Y-%m-%d %H:%i') BETWEEN '{start_time}' AND '{end_time}'
                     AND shop_shop.`uuid` IN ({shipping_shop_uuids})
                     AND location_sector.id NOT IN ({exclude_sector_ids})
                 """
@@ -60,7 +62,7 @@ class ShippingProcessor:
                     SELECT 
                         shipping_shippingitem.`uuid` as 'shipping_uuid',
                         shipping_shippingitem.tracking_number as 'tracking_number',
-                        DATE_FORMAT(DATE_ADD(shipping_shippingitem.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
+                        DATE_FORMAT(DATE_ADD(shipping_shippingitemtimetable.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
                         shipping_shippingitem.designated_sector_id as 'item_sector',
                         regexp_replace(location_sector.code, '[0-9]', '') as 'Area',
                         location_sector.code as 'code',
@@ -70,15 +72,20 @@ class ShippingProcessor:
                         0 as 'is_scanned',
                         location_address.zipcode as 'zipcode'
                     FROM shipping_shippingitem
+                    JOIN shipping_shippingitemtimetable
+                    ON shipping_shippingitem.id = shipping_shippingitemtimetable.shipping_item_id
                     JOIN location_address
                     ON shipping_shippingitem.address_id = location_address.id
                     JOIN location_sector
                     ON shipping_shippingitem.designated_sector_id = location_sector.id
-                    JOIN route_pickupbatch
+                    LEFT JOIN route_pickupbatch
                     ON shipping_shippingitem.pickup_batch_id = route_pickupbatch.id
-                    WHERE shipping_shippingitem.is_return = False
+                    WHERE shipping_shippingitem.is_return = FALSE
                     AND shipping_shippingitem.status IN ("READYFORPICKUP", "PICKUPASSIGNED", "PICKUPCOMPLETED", "WAITINGFORSORT")
-                    AND route_pickupbatch.uuid IN ({pickup_batch_uuids})
+                    AND (
+                            shipping_shippingitem.status = "WAITINGFORSORT"
+                            OR route_pickupbatch.uuid IN ({pickup_batch_uuids})
+                        )
                     AND location_sector.id NOT IN ({exclude_sector_ids})
                 """
             )
@@ -89,7 +96,7 @@ class ShippingProcessor:
                     SELECT
                         shipping_shippingitem.`uuid` as 'shipping_uuid',
                         shipping_shippingitem.tracking_number as 'tracking_number',
-                        DATE_FORMAT(DATE_ADD(shipping_shippingitem.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
+                        DATE_FORMAT(DATE_ADD(shipping_shippingitemtimetable.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
                         shipping_shippingitem.designated_sector_id as 'item_sector',
                         regexp_replace(location_sector.code, '[0-9]', '') as 'Area',
                         location_sector.code as 'code',
@@ -99,6 +106,8 @@ class ShippingProcessor:
                         0 as 'is_scanned',
                         location_address.zipcode as 'zipcode'
                     FROM shipping_shippingitem
+                    JOIN shipping_shippingitemtimetable
+                    ON shipping_shippingitem.id = shipping_shippingitemtimetable.shipping_item_id
                     JOIN location_address
                     ON shipping_shippingitem.address_id = location_address.id
                     JOIN location_sector
@@ -115,7 +124,7 @@ class ShippingProcessor:
                     SELECT
                         shipping_shippingitem.`uuid` as 'shipping_uuid',
                         shipping_shippingitem.tracking_number as 'tracking_number',
-                        DATE_FORMAT(DATE_ADD(shipping_shippingitem.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
+                        DATE_FORMAT(DATE_ADD(shipping_shippingitemtimetable.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
                         shipping_shippingitem.designated_sector_id as 'item_sector',
                         regexp_replace(location_sector.code, '[0-9]', '') as 'Area',
                         location_sector.code as 'code',
@@ -125,6 +134,8 @@ class ShippingProcessor:
                         0 as 'is_scanned',
                         location_address.zipcode as 'zipcode'
                     FROM shipping_shippingitem
+                    JOIN shipping_shippingitemtimetable
+                    ON shipping_shippingitem.id = shipping_shippingitemtimetable.shipping_item_id
                     JOIN location_address
                     ON shipping_shippingitem.address_id = location_address.id
                     JOIN location_sector
@@ -147,7 +158,7 @@ class ShippingProcessor:
                     SELECT 
                         shipping_shippingitem.`uuid` as 'shipping_uuid',
                         shipping_shippingitem.tracking_number as 'tracking_number',
-                        DATE_FORMAT(DATE_ADD(shipping_shippingitem.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
+                        DATE_FORMAT(DATE_ADD(shipping_shippingitemtimetable.timestamp_pickup, INTERVAL 9 HOUR),'%Y-%m-%d') as 'pickup_date',
                         shipping_shippingitem.designated_sector_id as 'item_sector',
                         regexp_replace(location_sector.code, '[0-9]', '') as 'Area',
                         location_sector.code as 'code',
@@ -157,6 +168,8 @@ class ShippingProcessor:
                         0 as 'is_scanned',
                         location_address.zipcode as 'zipcode'
                     FROM shipping_shippingitem
+                    JOIN shipping_shippingitemtimetable
+                    ON shipping_shippingitem.id = shipping_shippingitemtimetable.shipping_item_id
                     JOIN location_address
                     ON shipping_shippingitem.address_id = location_address.id
                     JOIN location_sector
