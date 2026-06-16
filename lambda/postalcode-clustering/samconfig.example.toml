@@ -1,0 +1,37 @@
+version = 0.1
+
+[default.global.parameters]
+region = "ap-northeast-2"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+[beta.deploy.parameters]
+stack_name = "sam-postalcode-clustering-beta"
+resolve_s3 = true
+s3_prefix = "sam-postalcode-clustering-beta"
+region = "ap-northeast-2"
+profile = "your-beta-aws-profile"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "EventBusName=\"your-beta-event-bus\" AccountEnv=\"Beta\""
+image_repositories = [
+  "PostalcodeClusteringFunction={beta_account_id}.dkr.ecr.ap-northeast-2.amazonaws.com/sam-postalcode-clustering-beta/postalcodeclusteringfunction"
+]
+
+[prod.deploy.parameters]
+stack_name = "sam-postalcode-clustering-prod"
+resolve_s3 = true
+s3_prefix = "sam-postalcode-clustering-prod"
+region = "ap-northeast-2"
+profile = "your-prod-aws-profile"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "EventBusName=\"your-prod-event-bus\" AccountEnv=\"Prod\""
+image_repositories = [
+  "PostalcodeClusteringFunction={prod_account_id}.dkr.ecr.ap-northeast-2.amazonaws.com/sam-postalcode-clustering-prod/postalcodeclusteringfunction"
+]

@@ -1,140 +1,144 @@
-# Delivus Postal Code Clustering Lambda
+# Delivus Postalcode Clustering Lambda
 
 > Korean version: [README_Kver.md](./README_Kver.md)
 
-## Production MLOps System for Reducing Same-Day Delivery Hub Bottlenecks
+## Production MLOps System for Solving Same-Day Delivery Hub Bottlenecks
 
-> A production-grade clustering system built to automate the manual cluster-editing process in a same-day delivery hub.  
-> The system combines machine-learning-based clustering with AWS serverless architecture to improve dispatch speed, reduce operational workload, and support real-time hub operations.
+This project is an operational delivery clustering system built to automate the manual cluster editing bottleneck that occurred before same-day delivery dispatch.  
+It combines zipcode group-based spatial matching, KMeans++ clustering, driver schedule constraints, MAX capacity constraints, and AWS Lambda-based automation to improve real hub operation KPIs.
 
 ---
 
 ## Executive Impact
 
-- Reduced **hub cluster editing time by 38%**: 39.5 min → 24.3 min
-- Reduced **average distance between delivery destinations by 22%**: 141.3 m → 110.05 m
-- Achieved **0% missed assignment rate** for additional incoming orders
-- Automated operations using **AWS Lambda + EventBridge + S3**
-- Integrated clustering results with the internal **Hub Admin App** used by the operations team
+| Metric | Before | After | Impact |
+|---|---:|---:|---|
+| Hub editing time | 39.5 min | 24.3 min | **38% reduction** |
+| Average distance between delivery points | 141.3 m | 110.05 m | **22% reduction** |
+| Additional order assignment | Manual | Automated | **0% missing assignment maintained** |
+| Operation method | Manual-heavy | Lambda automation | Reduced operator dependency |
 
 ---
 
 ## Business Problem
 
-In same-day delivery operations, hundreds of delivery items must be grouped and assigned to drivers within a short time window before dispatch.
+In same-day delivery operations, hundreds of delivery items need to be grouped by driver within a short time window before dispatch.  
+The existing process required operators to manually adjust clusters on a map, which repeatedly caused the following issues:
 
-Before this project, the hub operations team faced several recurring bottlenecks:
-
-- Manual cluster editing by operators
-- Unbalanced delivery volume across drivers
-- Dispatch delays and SLA risk
-- Reassignment workload for additional incoming orders
+- Long manual editing time for the operations team
+- Imbalanced delivery volume by driver
+- Dispatch delays and SLA volatility
+- Additional incoming orders had to be manually assigned again
 - High dependency on experienced operators
 
-These issues directly affected delivery quality, dispatch efficiency, and operational cost.
+This bottleneck directly affected delivery quality, dispatch speed, and operational cost.
 
 ---
 
 ## My Role
 
-I owned the clustering system end-to-end, from algorithm design to production deployment and operational monitoring.
+I owned the design, implementation, deployment, and operational improvement of the clustering system end-to-end.
 
-Key responsibilities:
-
-- Designed a postal-code-group-based clustering strategy
-- Implemented **KMeans++ with rule-based operational constraints**
-- Reflected driver schedules and maximum delivery capacity per driver
-- Built a serverless batch processing system using **AWS Lambda**
-- Stored clustering results in **Amazon S3** and integrated them with the Hub Admin App
-- Implemented Slack notifications and CloudWatch-based monitoring
-- Measured KPI improvements and iterated on the clustering logic
+- Designed a zipcode group-based clustering strategy
+- Implemented KMeans++ based initial clustering logic
+- Implemented small-cluster merge and inefficient-group adjustment logic
+- Applied driver schedule and driver-level MAX capacity constraints
+- Implemented Overlap Clustering for additional incoming orders
+- Built a serverless batch system using AWS Lambda Container Image
+- Stored result data in S3 and integrated it with the Hub Admin App
+- Built Slack alerts and CloudWatch log monitoring
+- Measured KPIs and continuously improved the system
 
 ---
 
 ## Solution Overview
 
-The system combines **ML clustering, business constraints, and automated cloud operations**.
-
-### Core Workflow
-
-1. Load delivery items, driver schedules, and postal code group data
-2. Map delivery destinations to postal code group polygons
-3. Generate initial clusters using **KMeans++**
-4. Merge small clusters and adjust inefficient groups
-5. Apply driver capacity limits and driver-type policies
-6. Automatically assign additional incoming orders using **overlap clustering**
-7. Save results to S3 and expose them to the Hub Admin App
-
----
-
-## System Architecture
+This system combines **ML clustering + spatial matching + operational constraints + serverless automation**.
 
 ```text
-EventBridge Trigger / Manual Execution
-            ↓
-AWS Lambda (Docker Image)
-            ↓
-MySQL / PostgreSQL Query
-            ↓
-Clustering Engine
-(KMeans++ + Constraint Rules)
-            ↓
-S3 Result Storage (JSON)
-            ↓
-Slack Notification / CloudWatch Logs
-            ↓
+EventBridge Trigger / Manual Trigger
+        ↓
+AWS Lambda Container
+        ↓
+MySQL / PostgreSQL Data Load
+        ↓
+Zipcode Polygon Matching
+        ↓
+KMeans++ Clustering
+        ↓
+Constraint Rules
+(driver schedule / max capacity / area policy)
+        ↓
+Overlap Clustering for Additional Orders
+        ↓
+S3 JSON Save
+        ↓
+Slack Alert / CloudWatch Logs
+        ↓
 Hub Admin App
-(Map Visualization + Manual Fine-Tuning)
 ```
 
 ---
 
-## Tech Stack
+## Core Process
 
-- **Language**: Python
-- **Data & ML**: Pandas, NumPy, Scikit-learn
-- **Cloud & Infrastructure**: AWS Lambda, Amazon S3, EventBridge, CloudWatch Logs, AWS SAM
-- **Database**: MySQL, PostgreSQL
-- **Monitoring & Alerting**: Slack Webhook, CloudWatch Logs
-- **Deployment**: AWS Lambda Container Image, AWS SAM
+### 1. Data Loading
+
+The pipeline loads delivery items, driver schedules, zipcode groups, and regional operation policies.
+
+### 2. Zipcode Polygon Matching
+
+Delivery coordinates are matched with zipcode group polygons to create region-based candidate groups.
+
+### 3. Initial Clustering
+
+KMeans++ is used to generate initial clusters based on delivery coordinate distribution.
+
+### 4. Constraint Adjustment
+
+Real operational constraints are applied.
+
+- Driver-level MAX capacity
+- Driver work schedule
+- Regional operation policy
+- Small-cluster merge
+- Overloaded / underloaded cluster adjustment
+
+### 5. Overlap Clustering
+
+Orders that arrive after the initial clustering are automatically assigned to existing clusters based on spatial overlap and distance criteria.
+
+### 6. Operation Integration
+
+Final results are saved to S3 and connected to the Hub Admin App for map-based review.
 
 ---
 
 ## Real Operation Screenshots
 
-### Full Hub Clustering Overview
+### Hub Overview
 
 ![Hub Overview](./docs/images/image1.png)
 
-### Detailed Cluster View
+### Cluster Detail
 
 ![Cluster Detail](./docs/images/image2.png)
 
 ---
 
-## Why This Is a Strong MLOps Project
+## Tech Stack
 
-This was not a one-off notebook analysis project.  
-It was a production system built to solve an actual operational bottleneck, deployed into a live logistics environment, and evaluated through measurable business KPIs.
-
-### Demonstrated Capabilities
-
-- Translated a real business bottleneck into an ML system design
-- Combined ML algorithms with operational rules and constraints
-- Built an automated AWS serverless batch pipeline
-- Designed a data flow from database query to S3 result delivery
-- Implemented operational monitoring and failure notifications
-- Improved the system based on measured KPI outcomes
-
----
-
-## Measured Results
-
-| Metric | Before | After | Impact |
-|---|---:|---:|---:|
-| Hub cluster editing time | 39.5 min | 24.3 min | **38% reduction** |
-| Average distance between delivery destinations | 141.3 m | 110.05 m | **22% reduction** |
-| Additional order assignment | Manual | Automated | **0% missed assignments** |
+| Category | Stack |
+|---|---|
+| Language | Python |
+| Data Processing | Pandas, NumPy |
+| ML / Clustering | Scikit-learn, KMeans++ |
+| Spatial Data | GeoPandas, Shapely |
+| Infrastructure | AWS Lambda, AWS SAM, Docker Image |
+| Storage | Amazon S3 |
+| Scheduler | EventBridge |
+| Database | MySQL, PostgreSQL |
+| Monitoring | CloudWatch Logs, Slack Webhook |
 
 ---
 
@@ -156,7 +160,32 @@ lambda/postalcode-clustering/
 
 ---
 
+## Why This Is Strong MLOps Experience
+
+This is not a notebook-based analysis project. It is a production-oriented MLOps system used in real operations.
+
+- Structured a business bottleneck as an ML clustering problem
+- Combined clustering algorithms with real operational constraints
+- Automated the workflow using AWS Lambda
+- Stored results in S3 and integrated them with an operations system
+- Built Slack/CloudWatch-based monitoring
+- Improved system performance based on operational KPIs
+
+---
+
+## Security / Redaction
+
+The following items were removed or replaced with sample values for the public portfolio repository.
+
+- Actual database credentials
+- Actual AWS Account ID
+- Actual S3 bucket name
+- Some internal operation table names
+- Actual delivery data and customer information
+- Deployment-only `samconfig.toml`
+
+---
+
 ## Key Takeaway
 
-> I designed, deployed, and operated a production ML clustering system to reduce dispatch bottlenecks in a same-day delivery hub.  
-> By combining clustering logic, operational constraints, and AWS-based MLOps, the system produced measurable improvements in real-world logistics operations.
+> I designed, deployed, and operated an ML clustering system to solve hub dispatch bottlenecks, creating measurable KPI improvements through an AWS-based automation pipeline.
